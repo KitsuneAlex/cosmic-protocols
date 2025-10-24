@@ -1,0 +1,195 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<protocol name="cosmic_frosted_area_unstable_v1">
+  <copyright>
+    Copyright © 2025 System76
+
+    Permission to use, copy, modify, distribute, and sell this
+    software and its documentation for any purpose is hereby granted
+    without fee, provided that the above copyright notice appear in
+    all copies and that both that copyright notice and this permission
+    notice appear in supporting documentation, and that the name of
+    the copyright holders not be used in advertising or publicity
+    pertaining to distribution of the software without specific,
+    written prior permission. The copyright holders make no
+    representations about the suitability of this software for any
+    purpose. It is provided "as is" without express or implied
+    warranty.
+
+    THE COPYRIGHT HOLDERS DISCLAIM ALL WARRANTIES WITH REGARD TO THIS
+    SOFTWARE, INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND
+    FITNESS, IN NO EVENT SHALL THE COPYRIGHT HOLDERS BE LIABLE FOR ANY
+    SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+    WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN
+    AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+    ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF
+    THIS SOFTWARE.
+  </copyright>
+
+  <description summary="communicate frosted areas of windows">
+    This protocol provides a way for clients to communicate a variable
+    number of frosted areas to be rendered within the client area.
+
+    This hint can then be used by the compositor to draw fitting
+    backdrop areas.
+  </description>
+
+  <interface name="cosmic_frosted_area_manager_v1" version="1">
+    <description summary="frosted area global">
+      Manager for creating frosted area list objects for existing toplevels
+    </description>
+
+    <request name="destroy" type="destructor">
+      <description summary="Destroy the global">
+        Informs the server, that the client will no longer use this global.
+        Any previously created frosted area list objects remain valid until destroyed.
+      </description>
+    </request>
+
+    <request name="get_frosted_area_list">
+      <description summary="Create a new frosted area list for an existing toplevel">
+        Instantiate an interface extension for the given xdg_toplevel to specify a list of
+        frosted backdrop areas to be rendered by the compositor.
+      </description>
+      <arg name="id" type="new_id" interface="cosmic_frosted_area_list_v1"
+           summary="the new cosmic_frosted_area_list_v1 object"/>
+      <arg name="toplevel" type="object" interface="xdg_toplevel"
+           summary="the toplevel"/>
+    </request>
+
+    <enum name="error">
+      <entry name="frosted_area_list_exists" value="0"
+             summary="the toplevel already has a frosted area list object"/>
+    </enum>
+  </interface>
+
+  <interface name="cosmic_frosted_area_list_v1" version="1">
+    <description summary="frosted area list toplevel">
+      The frosted area list object provides a way to manage a variable number
+      of frosted areas for a given toplevel.
+
+      If the xdg_toplevel associated with the cosmic_frosted_area_list_v1
+      object has been destroyed, this object becomes inert. Any further requests
+      other than destroy will raise the toplevel_destroyed protocol error.
+    </description>
+
+    <request name="destroy" type="destructor">
+      <description summary="Destroy the frosted area list object">
+        Informs the server that the client will no longer be using this protocol
+        object. The frosted area will be unset on the next commit.
+      </description>
+    </request>
+
+    <request name="add_area">
+      <description summary="Add a new frosted area to this list">
+        This request adds a new frosted area which is associated with this
+        frosted area list's toplevel.
+
+        If the xdg_toplevel associated with this frosted area list object
+        has been destroyed at the time of this request, the toplevel_destroyed
+        protocol error will be raised.
+      </description>
+      <arg name="area" type="new_id" interface="cosmic_frosted_area_v1"/>
+    </request>
+
+    <request name="remove_area">
+      <description summary="Remove the given frosted area from this list">
+        This request removes the given frosted area from the toplevel associated
+        with this frosted area list object.
+
+        If the xdg_toplevel associated with this frosted area list object
+        has been destroyed at the time of this request, the toplevel_destroyed
+        protocol error will be raised.
+      </description>
+      <arg name="area" type="object" interface="cosmic_frosted_area_v1"/>
+    </request>
+
+    <enum name="error">
+      <entry name="toplevel_destroyed" value="0"
+             summary="the associated toplevel object has been already destroyed"/>
+    </enum>
+  </interface>
+
+  <interface name="cosmic_frosted_area_v1" version="1">
+    <description summary="frosted area">
+      The frosted area object provides hints to the compositor about a
+      client area which should be rendered with a frosted backdrop effect.
+
+      This includes the bounds within the client window in which the effect
+      should be applied, as well as parameters being passed directly to the
+      compositor's renderer.
+    </description>
+
+    <request name="set_bounds">
+      <description summary="Set the minimum and maximum dimensions of the frosted area">
+        This request sets the minimum and maximum dimensions of this frosted area
+        within the client area.
+
+        The area bounds hint is double-buffered state and will be applied on
+        the next wl_surface.commit.
+
+        The value is given in logical space relative to the window geometry of the
+        associated xdg_toplevel. If any value exceeds either dimension
+        of the window geometry the area_too_large protocol error is raised.
+      </description>
+      <arg name="top_left" type="uint" summary="top-left corner of the area rectangle"/>
+      <arg name="top_right" type="uint" summary="top-right corner of the area rectangle"/>
+      <arg name="bottom_right" type="uint" summary="bottom-right corner of the area rectangle"/>
+      <arg name="bottom_left" type="uint" summary="bottom-left corner of the area rectangle"/>
+    </request>
+
+    <request name="set_blur_radius">
+      <description summary="Set radius of blur">
+        This request sets the radius of the blur pass of this frosted area in pixels.
+
+        The blur radius hint is double-buffered state and will be applied on
+        the next wl_surface.commit.
+      </description>
+      <arg name="radius" type="uint" summary="The radius of the blur in pixels"/>
+    </request>
+
+    <request name="set_blur_strength">
+      <description summary="Set strength of blur">
+        This request sets the strength of the blur pass of this frosted area in percent.
+
+        The blur strength hint is double-buffered state and will be applied on
+        the next wl_surface.commit.
+
+        If the strength value is negative or exceeds 100, the invalid_percentage
+        protocol error is raised.
+      </description>
+      <arg name="strength" type="uint" summary="The strength of the blur in percent"/>
+    </request>
+
+    <request name="set_noise_strength">
+      <description summary="Set strength of noise">
+        This request sets the strength of the noise pass of this frosted area in percent.
+
+        The noise strength hint is double-buffered state and will be applied on
+        the next wl_surface.commit.
+
+        If the strength value is negative or exceeds 100, the invalid_percentage
+        protocol error is raised.
+      </description>
+      <arg name="strength" type="uint" summary="The strength of the noise in percent"/>
+    </request>
+
+    <request name="set_tint">
+      <description summary="Set tint of effect">
+        This request sets the tint color of this frosted area packed as RGBA.
+
+        The tint color hint is double-buffered state and will be applied on
+        the next wl_surface.commit.
+      </description>
+      <arg name="color" type="uint" summary="The tint color applied after blur and noise packed as 0xRRGGBBAA"/>
+    </request>
+
+    <enum name="error">
+      <entry name="toplevel_destroyed" value="0"
+             summary="the associated toplevel object has been already destroyed"/>
+      <entry name="area_too_large" value="1"
+             summary="the associated toplevel's window geometry isn't large enough for the requested area"/>
+      <entry name="invalid_percentage" value="2"
+             summary="the percentage value must not be negative nor exceed 100"/>
+    </enum>
+  </interface>
+</protocol>

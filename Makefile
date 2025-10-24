@@ -13,6 +13,7 @@ unstable_protocols = \
 	unstable/cosmic-toplevel-management-unstable-v1.xml \
 	unstable/cosmic-workspace-unstable-v1.xml \
 	unstable/cosmic-workspace-unstable-v2.xml \
+	unstable/cosmic-frosted-area-unstable-v1.xml \
 
 check: $(unstable_protocols)
 	./check.sh $(unstable_protocols)

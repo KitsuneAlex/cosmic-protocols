@@ -41,6 +41,18 @@ pub mod atspi {
     }
 }
 
+pub mod frosted_area {
+    //! Backdrop rendering hints for toplevels
+
+    #[allow(missing_docs)]
+    pub mod v1 {
+        wayland_protocol!(
+            "./unstable/cosmic-frosted-area-unstable-v1.xml",
+            [wayland_protocols::xdg::shell]
+        );
+    }
+}
+
 pub mod corner_radius {
     //! Hint toplevel corner radius values.
 
